@@ -1,7 +1,9 @@
 package com.alphabotz.vybemusic.core.playback
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.util.Log
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
@@ -16,6 +18,7 @@ import com.alphabotz.vybemusic.core.model.Track
 import com.alphabotz.vybemusic.core.network.LrclibLyricsApi
 import com.alphabotz.vybemusic.core.network.VybeJamEngine
 import com.alphabotz.vybemusic.core.network.VybeMusicEngine
+import com.alphabotz.vybemusic.core.storage.PlaybackPersistenceManager
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -47,7 +50,9 @@ class VybePlayerController(private val context: Context) {
     val playbackState: StateFlow<PlaybackState> = _playbackState.asStateFlow()
 
     init {
+        PlaybackPersistenceManager.init(context)
         initializePlayer()
+        restoreLastPlayback()
         startPositionTracker()
     }
 
@@ -63,12 +68,16 @@ class VybePlayerController(private val context: Context) {
 
         val player = ExoPlayer.Builder(context)
             .setMediaSourceFactory(mediaSourceFactory)
+            .setWakeMode(androidx.media3.common.C.WAKE_MODE_NETWORK)
+            .setHandleAudioBecomingNoisy(true)
             .build()
 
         player.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 _playbackState.value = _playbackState.value.copy(isPlaying = isPlaying)
+                isCurrentlyPlaying = isPlaying
                 VybeJamEngine.syncPlaybackState(isPlaying, player.currentPosition)
+                startPlaybackService()
             }
 
             override fun onPlaybackStateChanged(state: Int) {
@@ -88,15 +97,52 @@ class VybePlayerController(private val context: Context) {
                     errorMessage = error.localizedMessage,
                     isPlaying = false
                 )
+                isCurrentlyPlaying = false
             }
         })
 
         exoPlayer = player
 
         try {
-            mediaSession = MediaSession.Builder(context, player).build()
+            val session = MediaSession.Builder(context, player).build()
+            mediaSession = session
+            activeMediaSession = session
         } catch (e: Exception) {
             Log.e("VybePlayerController", "MediaSession init error", e)
+        }
+    }
+
+    private fun restoreLastPlayback() {
+        val (savedTrack, savedPos) = PlaybackPersistenceManager.getSavedPlayback()
+        if (savedTrack != null) {
+            _playbackState.value = _playbackState.value.copy(
+                currentTrack = savedTrack,
+                currentPositionMs = savedPos,
+                durationMs = savedTrack.durationSeconds * 1000L,
+                isPlaying = false,
+                queue = listOf(savedTrack),
+                queueIndex = 0
+            )
+            currentPlayingTrack = savedTrack
+            isCurrentlyPlaying = false
+
+            exoPlayer?.apply {
+                val metadata = MediaMetadata.Builder()
+                    .setTitle(savedTrack.title)
+                    .setArtist(savedTrack.artist)
+                    .setAlbumTitle(savedTrack.album)
+                    .setArtworkUri(Uri.parse(savedTrack.artworkUrl))
+                    .build()
+
+                val mediaItem = MediaItem.Builder()
+                    .setUri(savedTrack.streamUrl)
+                    .setMediaMetadata(metadata)
+                    .build()
+
+                setMediaItem(mediaItem)
+                seekTo(savedPos)
+                prepare()
+            }
         }
     }
 
@@ -111,6 +157,9 @@ class VybePlayerController(private val context: Context) {
             errorMessage = null
         )
 
+        currentPlayingTrack = track
+        isCurrentlyPlaying = true
+
         // Fetch Synced Lyrics in Background
         scope.launch {
             val lyrics = LrclibLyricsApi.getLyrics(track.id, track.title, track.artist)
@@ -119,7 +168,7 @@ class VybePlayerController(private val context: Context) {
             }
         }
 
-        // Start Streaming with ExoPlayer & Rich MediaMetadata for System Popup/Lock Screen
+        // Start Streaming with ExoPlayer & Rich MediaMetadata
         exoPlayer?.apply {
             stop()
             clearMediaItems()
@@ -141,10 +190,12 @@ class VybePlayerController(private val context: Context) {
             play()
         }
 
-        // Contextual Smart Auto-Queue: If queue has few tracks, load similar genre tracks
+        startPlaybackService()
+
+        // Contextual Smart Auto-Queue based on playing track's artist and style
         if (newQueue.size <= 3) {
             scope.launch {
-                val suggestions = VybeMusicEngine.getTrendingTracks(track.language)
+                val suggestions = VybeMusicEngine.getSimilarTracks(track)
                 val cleanSuggestions = suggestions.filter { s -> newQueue.none { it.id == s.id } }
                 if (cleanSuggestions.isNotEmpty()) {
                     _playbackState.value = _playbackState.value.copy(
@@ -153,6 +204,11 @@ class VybePlayerController(private val context: Context) {
                 }
             }
         }
+    }
+
+    fun pause() {
+        exoPlayer?.pause()
+        startPlaybackService()
     }
 
     fun togglePlayPause() {
@@ -164,6 +220,7 @@ class VybePlayerController(private val context: Context) {
                     it.seekTo(0)
                 }
                 it.play()
+                startPlaybackService()
             }
         }
     }
@@ -173,6 +230,10 @@ class VybePlayerController(private val context: Context) {
         _playbackState.value = _playbackState.value.copy(currentPositionMs = positionMs)
         updateActiveLyricLine(positionMs)
         VybeJamEngine.syncPlaybackState(_playbackState.value.isPlaying, positionMs)
+
+        _playbackState.value.currentTrack?.let {
+            PlaybackPersistenceManager.saveLastPlayback(it, positionMs)
+        }
     }
 
     fun playNext() {
@@ -248,12 +309,28 @@ class VybePlayerController(private val context: Context) {
     }
 
     private fun handleTrackEnded() {
+        if (SleepTimerManager.onTrackEnded(context)) {
+            return
+        }
         val state = _playbackState.value
         if (state.isRepeat) {
             seekTo(0)
             exoPlayer?.play()
         } else {
             playNext()
+        }
+    }
+
+    private fun startPlaybackService() {
+        try {
+            val intent = Intent(context, VybePlaybackService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        } catch (e: Exception) {
+            Log.e("VybePlayerController", "Failed to start VybePlaybackService", e)
         }
     }
 
@@ -269,6 +346,10 @@ class VybePlayerController(private val context: Context) {
                             durationMs = dur
                         )
                         updateActiveLyricLine(pos)
+
+                        _playbackState.value.currentTrack?.let {
+                            PlaybackPersistenceManager.saveLastPlayback(it, pos)
+                        }
                     }
                 }
                 delay(250)
@@ -287,8 +368,24 @@ class VybePlayerController(private val context: Context) {
     fun release() {
         mediaSession?.release()
         mediaSession = null
+        activeMediaSession = null
         exoPlayer?.release()
         exoPlayer = null
         scope.cancel()
+    }
+
+    companion object {
+        @Volatile
+        private var INSTANCE: VybePlayerController? = null
+
+        fun getInstance(context: Context): VybePlayerController {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: VybePlayerController(context.applicationContext).also { INSTANCE = it }
+            }
+        }
+
+        var activeMediaSession: MediaSession? = null
+        var currentPlayingTrack: Track? = null
+        var isCurrentlyPlaying: Boolean = false
     }
 }

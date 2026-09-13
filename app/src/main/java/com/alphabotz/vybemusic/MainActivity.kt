@@ -17,8 +17,16 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        playerController = VybePlayerController(applicationContext)
+        playerController = VybePlayerController.getInstance(applicationContext)
         com.alphabotz.vybemusic.core.storage.UserProfileManager.init(applicationContext)
+        com.alphabotz.vybemusic.core.storage.PlaylistManager.init(applicationContext)
+
+        // Spotify/Apple Music standard: back button minimises app without terminating audio
+        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                moveTaskToBack(true)
+            }
+        })
 
         setContent {
             VybeMusicTheme {
@@ -34,6 +42,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        playerController.release()
+        // Do NOT release playerController here so background playback continues uninterrupted!
     }
 }

@@ -7,11 +7,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.alphabotz.vybemusic.core.playback.PlaybackState
+import com.alphabotz.vybemusic.core.storage.PlaylistManager
 import com.alphabotz.vybemusic.ui.theme.*
 
 @Composable
@@ -34,6 +37,8 @@ fun VybeMiniPlayer(
     modifier: Modifier = Modifier
 ) {
     val track = playbackState.currentTrack ?: return
+    val likedTracks by PlaylistManager.likedTracks.collectAsState()
+    val isLiked = remember(likedTracks, track.id) { PlaylistManager.isLiked(track.id) }
 
     val progress = if (playbackState.durationMs > 0) {
         (playbackState.currentPositionMs.toFloat() / playbackState.durationMs.toFloat()).coerceIn(0f, 1f)
@@ -92,6 +97,21 @@ fun VybeMiniPlayer(
                     )
                 }
 
+                // Mini Like Button
+                IconButton(
+                    onClick = { PlaylistManager.toggleLike(track) },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                        contentDescription = "Like",
+                        tint = if (isLiked) Color(0xFFFF3366) else Color.White.copy(alpha = 0.5f),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(4.dp))
+
                 // Play / Pause Circle Button
                 Box(
                     modifier = Modifier
@@ -109,7 +129,7 @@ fun VybeMiniPlayer(
                     )
                 }
 
-                Spacer(modifier = Modifier.width(6.dp))
+                Spacer(modifier = Modifier.width(4.dp))
 
                 // Next Button
                 IconButton(onClick = onNext) {

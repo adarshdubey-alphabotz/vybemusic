@@ -27,6 +27,9 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.alphabotz.vybemusic.core.model.Track
 import com.alphabotz.vybemusic.core.playback.PlaybackState
+import com.alphabotz.vybemusic.core.playback.SleepTimerManager
+import com.alphabotz.vybemusic.core.storage.PlaylistManager
+import androidx.compose.ui.platform.LocalContext
 import com.alphabotz.vybemusic.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,6 +52,7 @@ fun AppleMusicPlayer(
     val track = playbackState.currentTrack ?: return
     var showLyrics by remember { mutableStateOf(false) }
     var showQueueSheet by remember { mutableStateOf(false) }
+    var showSleepPicker by remember { mutableStateOf(false) }
 
     // Precise scrubbing state so position updates never jump while user drags
     var isScrubbing by remember { mutableStateOf(false) }
@@ -183,12 +187,54 @@ fun AppleMusicPlayer(
                     )
                 }
 
+                // Quick Like Button
+                val likedTracks by PlaylistManager.likedTracks.collectAsState()
+                val isLiked = remember(likedTracks, track.id) { PlaylistManager.isLiked(track.id) }
+                IconButton(onClick = { PlaylistManager.toggleLike(track) }) {
+                    Icon(
+                        imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                        contentDescription = "Like Song",
+                        tint = if (isLiked) Color(0xFFFF3366) else Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                // Sleep Timer Pill
+                val remainingSleep by SleepTimerManager.remainingSeconds.collectAsState()
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (remainingSleep != null) VybeVolt.copy(alpha = 0.2f) else Color(0x26FFFFFF))
+                        .border(1.dp, if (remainingSleep != null) VybeVolt else Color(0x35FFFFFF), RoundedCornerShape(8.dp))
+                        .clickable { showSleepPicker = true }
+                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Outlined.Bedtime,
+                            contentDescription = "Sleep Timer",
+                            tint = if (remainingSleep != null) VybeVolt else Color.White,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        if (remainingSleep != null) {
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "${remainingSleep!! / 60}m",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = VybeVolt
+                            )
+                        }
+                    }
+                }
+
                 // Apple Music Style Lossless Badge
                 Surface(
                     shape = RoundedCornerShape(8.dp),
                     color = Color(0x26FFFFFF),
                     border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x35FFFFFF)),
-                    modifier = Modifier.padding(start = 12.dp)
+                    modifier = Modifier.padding(start = 6.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -359,6 +405,68 @@ fun AppleMusicPlayer(
                     onToggleRepeat = onToggleRepeat,
                     onClose = { showQueueSheet = false }
                 )
+            }
+        }
+
+        // Sleep Timer Bottom Sheet
+        if (showSleepPicker) {
+            val context = LocalContext.current
+            val remainingSleep by SleepTimerManager.remainingSeconds.collectAsState()
+
+            ModalBottomSheet(
+                onDismissRequest = { showSleepPicker = false },
+                containerColor = Color(0xFF141522),
+                contentColor = Color.White
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 20.dp, vertical = 12.dp)
+                ) {
+                    Text(
+                        text = "Sleep Timer",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Black,
+                        color = Color.White
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    val presets = listOf(15, 30, 45, 60)
+                    presets.forEach { minutes ->
+                        ActionSheetRow(
+                            icon = Icons.Outlined.Timer,
+                            title = "$minutes Minutes",
+                            subtitle = "Pauses playback automatically in $minutes min"
+                        ) {
+                            SleepTimerManager.startTimer(context, minutes)
+                            showSleepPicker = false
+                        }
+                    }
+
+                    ActionSheetRow(
+                        icon = Icons.Outlined.MusicOff,
+                        title = "End of This Song",
+                        subtitle = "Stops when current song finishes"
+                    ) {
+                        SleepTimerManager.setStopAtEndOfSong(context, true)
+                        showSleepPicker = false
+                    }
+
+                    if (remainingSleep != null) {
+                        ActionSheetRow(
+                            icon = Icons.Outlined.Cancel,
+                            title = "Turn Off Timer",
+                            subtitle = "Cancel active sleep countdown",
+                            iconTint = Color.Red
+                        ) {
+                            SleepTimerManager.cancelTimer()
+                            showSleepPicker = false
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
             }
         }
     }

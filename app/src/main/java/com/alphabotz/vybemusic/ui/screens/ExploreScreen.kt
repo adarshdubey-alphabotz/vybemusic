@@ -37,6 +37,8 @@ data class GenreCategory(
 @Composable
 fun ExploreScreen(
     onTrackSelect: (Track, List<Track>) -> Unit,
+    onPlayNext: (Track) -> Unit = {},
+    onAddToQueue: (Track) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val categories = remember {
@@ -251,6 +253,8 @@ fun ExploreScreen(
                         GlassTrackRow(
                             track = track,
                             onClick = { onTrackSelect(track, categoryTracks) },
+                            onPlayNext = { onPlayNext(track) },
+                            onAddToQueue = { onAddToQueue(track) },
                             modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)
                         )
                     }

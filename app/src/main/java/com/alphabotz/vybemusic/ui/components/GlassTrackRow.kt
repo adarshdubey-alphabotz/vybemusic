@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.alphabotz.vybemusic.core.model.Track
+import com.alphabotz.vybemusic.core.storage.PlaylistManager
 import com.alphabotz.vybemusic.ui.theme.VybeVolt
 
 @Composable
@@ -31,9 +34,14 @@ fun GlassTrackRow(
     modifier: Modifier = Modifier,
     index: Int? = null,
     onPlayNext: (() -> Unit)? = null,
-    onAddToQueue: (() -> Unit)? = null
+    onAddToQueue: (() -> Unit)? = null,
+    onStartJam: (() -> Unit)? = null
 ) {
-    var showMenu by remember { mutableStateOf(false) }
+    var showActionSheet by remember { mutableStateOf(false) }
+    val likedTracks by PlaylistManager.likedTracks.collectAsState()
+    val isLiked = remember(likedTracks, track.id) {
+        PlaylistManager.isLiked(track.id)
+    }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -43,7 +51,7 @@ fun GlassTrackRow(
             .background(Color(0x1AFFFFFF))
             .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(18.dp))
             .clickable { onClick() }
-            .padding(12.dp)
+            .padding(horizontal = 12.dp, vertical = 10.dp)
     ) {
         if (index != null) {
             Text(
@@ -58,7 +66,7 @@ fun GlassTrackRow(
         // Squircle Artwork
         Box(
             modifier = Modifier
-                .size(52.dp)
+                .size(50.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(12.dp))
         ) {
@@ -70,7 +78,7 @@ fun GlassTrackRow(
             )
         }
 
-        Spacer(modifier = Modifier.width(14.dp))
+        Spacer(modifier = Modifier.width(12.dp))
 
         // Title & Artist
         Column(modifier = Modifier.weight(1f)) {
@@ -93,14 +101,14 @@ fun GlassTrackRow(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false)
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                // 320k Lossless Pill
+                Spacer(modifier = Modifier.width(6.dp))
+                // Lossless Pill
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
+                        .clip(RoundedCornerShape(5.dp))
                         .background(Color(0x26D2F802))
-                        .border(0.5.dp, VybeVolt.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                        .border(0.5.dp, VybeVolt.copy(alpha = 0.5f), RoundedCornerShape(5.dp))
+                        .padding(horizontal = 5.dp, vertical = 1.dp)
                 ) {
                     Text(
                         text = "320k",
@@ -112,65 +120,40 @@ fun GlassTrackRow(
             }
         }
 
-        Spacer(modifier = Modifier.width(8.dp))
-
-        // Options dropdown menu
-        if (onPlayNext != null || onAddToQueue != null) {
-            Box {
-                IconButton(
-                    onClick = { showMenu = true },
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.MoreVert,
-                        contentDescription = "More options",
-                        tint = Color.White.copy(alpha = 0.6f),
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-
-                DropdownMenu(
-                    expanded = showMenu,
-                    onDismissRequest = { showMenu = false },
-                    modifier = Modifier.background(Color(0xFF181A28))
-                ) {
-                    if (onPlayNext != null) {
-                        DropdownMenuItem(
-                            text = { Text("Play Next", color = Color.White) },
-                            onClick = {
-                                onPlayNext()
-                                showMenu = false
-                            }
-                        )
-                    }
-                    if (onAddToQueue != null) {
-                        DropdownMenuItem(
-                            text = { Text("Add to Queue", color = Color.White) },
-                            onClick = {
-                                onAddToQueue()
-                                showMenu = false
-                            }
-                        )
-                    }
-                }
-            }
-        }
-
-        // Circular Glass Play Icon
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(Color(0x26FFFFFF))
-                .border(1.dp, Color(0x33FFFFFF), CircleShape),
-            contentAlignment = Alignment.Center
+        // Heart Like Toggle Button
+        IconButton(
+            onClick = { PlaylistManager.toggleLike(track) },
+            modifier = Modifier.size(34.dp)
         ) {
             Icon(
-                imageVector = Icons.Default.PlayArrow,
-                contentDescription = "Play",
-                tint = Color.White,
-                modifier = Modifier.size(20.dp)
+                imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                contentDescription = "Like",
+                tint = if (isLiked) Color(0xFFFF3366) else Color.White.copy(alpha = 0.45f),
+                modifier = Modifier.size(18.dp)
             )
         }
+
+        // 3-Dots Action Sheet Opener
+        IconButton(
+            onClick = { showActionSheet = true },
+            modifier = Modifier.size(34.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.MoreVert,
+                contentDescription = "Options",
+                tint = Color.White.copy(alpha = 0.6f),
+                modifier = Modifier.size(18.dp)
+            )
+        }
+    }
+
+    if (showActionSheet) {
+        TrackActionSheet(
+            track = track,
+            onDismiss = { showActionSheet = false },
+            onPlayNext = { onPlayNext?.invoke() },
+            onAddToQueue = { onAddToQueue?.invoke() },
+            onStartJam = { onStartJam?.invoke() }
+        )
     }
 }

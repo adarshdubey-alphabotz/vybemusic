@@ -37,9 +37,13 @@ fun MainScaffold(
     val playbackState by playerController.playbackState.collectAsState()
     val activeJam by VybeJamEngine.currentJam.collectAsState()
 
+    val userProfile by com.alphabotz.vybemusic.core.storage.UserProfileManager.profile.collectAsState()
+
     var currentTab by remember { mutableStateOf(NavTab.HOME) }
     var isPlayerExpanded by remember { mutableStateOf(false) }
     var isJamSheetOpen by remember { mutableStateOf(false) }
+    var isProfileOpen by remember { mutableStateOf(false) }
+    var isArtistPickerOpen by remember { mutableStateOf(!userProfile.hasCompletedOnboarding && userProfile.favoriteArtists.isEmpty()) }
 
     Box(modifier = Modifier.fillMaxSize().background(VybeBackground)) {
         // Main Screen Content
@@ -52,13 +56,21 @@ fun MainScaffold(
                 NavTab.HOME -> HomeScreen(
                     onTrackSelect = { track, queue -> playerController.playTrack(track, queue) },
                     onOpenJam = { isJamSheetOpen = true },
-                    onOpenSearch = { currentTab = NavTab.SEARCH }
+                    onOpenSearch = { currentTab = NavTab.SEARCH },
+                    onOpenProfile = { isProfileOpen = true },
+                    onOpenArtistPicker = { isArtistPickerOpen = true },
+                    onPlayNext = { playerController.playNextInQueue(it) },
+                    onAddToQueue = { playerController.addToQueue(it) }
                 )
                 NavTab.EXPLORE -> ExploreScreen(
-                    onTrackSelect = { track, queue -> playerController.playTrack(track, queue) }
+                    onTrackSelect = { track, queue -> playerController.playTrack(track, queue) },
+                    onPlayNext = { playerController.playNextInQueue(it) },
+                    onAddToQueue = { playerController.addToQueue(it) }
                 )
                 NavTab.SEARCH -> SearchScreen(
-                    onTrackSelect = { track, queue -> playerController.playTrack(track, queue) }
+                    onTrackSelect = { track, queue -> playerController.playTrack(track, queue) },
+                    onPlayNext = { playerController.playNextInQueue(it) },
+                    onAddToQueue = { playerController.addToQueue(it) }
                 )
                 NavTab.JAM -> {
                     LaunchedEffect(Unit) {
@@ -173,6 +185,32 @@ fun MainScaffold(
                     }
                 )
             }
+        }
+
+        // YouTube Music Profile Screen Modal
+        AnimatedVisibility(
+            visible = isProfileOpen,
+            enter = slideInHorizontally(initialOffsetX = { it }),
+            exit = slideOutHorizontally(targetOffsetX = { it })
+        ) {
+            ProfileScreen(
+                onBack = { isProfileOpen = false },
+                onOpenArtistPicker = {
+                    isProfileOpen = false
+                    isArtistPickerOpen = true
+                }
+            )
+        }
+
+        // Spotify-style 3+ Artist Preference Onboarding Modal
+        AnimatedVisibility(
+            visible = isArtistPickerOpen,
+            enter = slideInVertically(initialOffsetY = { it }),
+            exit = slideOutVertically(targetOffsetY = { it })
+        ) {
+            ArtistSelectionScreen(
+                onCompleted = { isArtistPickerOpen = false }
+            )
         }
     }
 }

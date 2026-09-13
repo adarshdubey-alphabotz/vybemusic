@@ -1,6 +1,7 @@
 package com.alphabotz.vybemusic.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -26,6 +27,8 @@ import kotlinx.coroutines.delay
 @Composable
 fun SearchScreen(
     onTrackSelect: (Track, List<Track>) -> Unit,
+    onPlayNext: (Track) -> Unit = {},
+    onAddToQueue: (Track) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -108,7 +111,9 @@ fun SearchScreen(
                     GlassTrackRow(
                         index = index + 1,
                         track = track,
-                        onClick = { onTrackSelect(track, searchResults) }
+                        onClick = { onTrackSelect(track, searchResults) },
+                        onPlayNext = { onPlayNext(track) },
+                        onAddToQueue = { onAddToQueue(track) }
                     )
                 }
             }
@@ -147,6 +152,7 @@ fun SearchScreen(
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(52.dp)
+                                    .clickable { searchQuery = cat }
                             ) {
                                 Box(
                                     contentAlignment = Alignment.CenterStart,
