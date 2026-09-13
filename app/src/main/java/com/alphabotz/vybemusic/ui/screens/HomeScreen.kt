@@ -18,20 +18,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.alphabotz.vybemusic.core.model.Track
 import com.alphabotz.vybemusic.core.network.VybeMusicEngine
-import com.alphabotz.vybemusic.ui.theme.*
+import com.alphabotz.vybemusic.core.storage.UserProfileManager
 import com.alphabotz.vybemusic.ui.components.GlassTrackRow
+import com.alphabotz.vybemusic.ui.theme.*
 
 @Composable
 fun HomeScreen(
@@ -40,6 +39,9 @@ fun HomeScreen(
     onOpenSearch: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val profile by UserProfileManager.profile.collectAsState()
+    var showProfileDialog by remember { mutableStateOf(false) }
+
     var tracks by remember { mutableStateOf(VybeMusicEngine.getInitialSeedTracks()) }
     var isLoading by remember { mutableStateOf(false) }
 
@@ -71,12 +73,12 @@ fun HomeScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(300.dp)
+                .height(320.dp)
                 .background(
                     Brush.radialGradient(
                         colors = listOf(
                             Color(0x558B5CF6),
-                            Color(0x22EC4899),
+                            Color(0x25EC4899),
                             Color.Transparent
                         ),
                         center = Offset(200f, 100f),
@@ -89,7 +91,7 @@ fun HomeScreen(
             contentPadding = PaddingValues(bottom = 120.dp),
             modifier = Modifier.fillMaxSize()
         ) {
-            // Top Header: Avatar + "Hi, Adarsh" + Glass Action Pills
+            // Top Header: Avatar + Glass Action Pills
             item {
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -99,21 +101,20 @@ fun HomeScreen(
                         .statusBarsPadding()
                         .padding(horizontal = 20.dp, vertical = 14.dp)
                 ) {
-                    // Avatar & Greeting
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(46.dp)
-                                .clip(CircleShape)
-                                .border(1.5.dp, Color(0x4DFFFFFF), CircleShape)
-                        ) {
-                            AsyncImage(
-                                model = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200",
-                                contentDescription = "Profile",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
+                    // Clickable Avatar to edit name/photo
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .border(2.dp, VybeVolt.copy(alpha = 0.8f), CircleShape)
+                            .clickable { showProfileDialog = true }
+                    ) {
+                        AsyncImage(
+                            model = profile.avatarUrl,
+                            contentDescription = "Profile",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
                     }
 
                     // Glass Action Buttons: Search & Vybe Jam
@@ -160,16 +161,29 @@ fun HomeScreen(
                 }
             }
 
-            // Big Bold Personalized Greeting
+            // Big Bold Dynamic Greeting (Tap to edit name)
             item {
-                Text(
-                    text = "Hi, Adarsh",
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Color.White,
-                    letterSpacing = (-0.5).sp,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp, vertical = 4.dp)
+                        .clickable { showProfileDialog = true }
+                ) {
+                    Text(
+                        text = "Hi, ${profile.name}",
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.White,
+                        letterSpacing = (-0.5).sp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit Name",
+                        tint = Color.White.copy(alpha = 0.4f),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
 
             // Filter Chips (Volt Lime Active Pill)
@@ -215,7 +229,7 @@ fun HomeScreen(
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
                 )
 
-                // Hero Lavender Pastel Card
+                // Hero Lavender Pastel Card (Inspiration 1)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -357,5 +371,82 @@ fun HomeScreen(
             }
         }
     }
-}
 
+    // Interactive Edit Profile Dialog
+    if (showProfileDialog) {
+        var newNameInput by remember { mutableStateOf(profile.name) }
+        var selectedAvatarUrl by remember { mutableStateOf(profile.avatarUrl) }
+
+        AlertDialog(
+            onDismissRequest = { showProfileDialog = false },
+            containerColor = Color(0xFF181A28),
+            title = {
+                Text("Customize Profile", color = Color.White, fontWeight = FontWeight.Black)
+            },
+            text = {
+                Column {
+                    Text("Display Name", color = Color(0xFFA0A5BA), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    OutlinedTextField(
+                        value = newNameInput,
+                        onValueChange = { newNameInput = it },
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedBorderColor = VybeVolt,
+                            unfocusedBorderColor = Color(0x4DFFFFFF)
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("Choose Avatar", color = Color(0xFFA0A5BA), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        items(UserProfileManager.AVATAR_OPTIONS) { avUrl ->
+                            val isSelected = avUrl == selectedAvatarUrl
+                            Box(
+                                modifier = Modifier
+                                    .size(54.dp)
+                                    .clip(CircleShape)
+                                    .border(
+                                        2.5.dp,
+                                        if (isSelected) VybeVolt else Color.Transparent,
+                                        CircleShape
+                                    )
+                                    .clickable { selectedAvatarUrl = avUrl }
+                            ) {
+                                AsyncImage(
+                                    model = avUrl,
+                                    contentDescription = "Avatar Option",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        UserProfileManager.updateProfile(newNameInput, selectedAvatarUrl)
+                        showProfileDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = VybeVolt),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("Save Changes", color = Color.Black, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showProfileDialog = false }) {
+                    Text("Cancel", color = Color.White)
+                }
+            }
+        )
+    }
+}

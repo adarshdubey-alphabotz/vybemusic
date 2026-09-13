@@ -1,69 +1,88 @@
 package com.alphabotz.vybemusic.core.network
 
+import android.util.Log
 import com.alphabotz.vybemusic.core.model.Lyrics
 import com.alphabotz.vybemusic.core.model.LyricsLine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.json.JSONArray
+import org.json.JSONObject
 import java.net.URLEncoder
+import java.util.concurrent.TimeUnit
 
 object LrclibLyricsApi {
-    private val client = OkHttpClient()
-    private val json = Json { ignoreUnknownKeys = true }
+    private const val TAG = "LrclibLyricsApi"
+    private val client = OkHttpClient.Builder()
+        .connectTimeout(8, TimeUnit.SECONDS)
+        .readTimeout(8, TimeUnit.SECONDS)
+        .build()
 
     /**
-     * Fetches synchronized karaoke lyrics for a track by title and artist.
+     * Fetches synchronized karaoke lyrics for a track by search query or exact match
      */
     suspend fun getLyrics(trackId: String, title: String, artist: String): Lyrics? = withContext(Dispatchers.IO) {
         try {
-            val encodedTitle = URLEncoder.encode(title.trim(), "UTF-8")
-            val encodedArtist = URLEncoder.encode(artist.trim(), "UTF-8")
-            val url = "https://lrclib.net/api/get?track_name=$encodedTitle&artist_name=$encodedArtist"
+            val cleanTitle = cleanSearchTerm(title)
+            val cleanArtist = cleanSearchTerm(artist.split(",", "-", "&").firstOrNull() ?: artist)
+            val query = "$cleanTitle $cleanArtist".trim()
+
+            val encodedQuery = URLEncoder.encode(query, "UTF-8")
+            val searchUrl = "https://lrclib.net/api/search?q=$encodedQuery"
 
             val request = Request.Builder()
-                .url(url)
-                .header("User-Agent", "VybeMusic/1.0.0 (https://github.com/adarshdubey-alphabotz/vybemusic)")
+                .url(searchUrl)
+                .header("User-Agent", "VybeMusic/1.0.0 (Android)")
                 .build()
 
             client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) return@withContext null
-                val body = response.body?.string() ?: return@withContext null
-                val jsonObject = json.parseToJsonElement(body).jsonObject
+                if (response.isSuccessful) {
+                    val body = response.body?.string()
+                    if (!body.isNullOrBlank() && body.startsWith("[")) {
+                        val array = JSONArray(body)
+                        for (i in 0 until array.length()) {
+                            val item = array.optJSONObject(i) ?: continue
+                            val syncedRaw = item.optString("syncedLyrics", "")
+                            val plainRaw = item.optString("plainLyrics", "")
 
-                val syncedLyricsRaw = jsonObject["syncedLyrics"]?.jsonPrimitive?.content
-                val plainLyrics = jsonObject["plainLyrics"]?.jsonPrimitive?.content ?: ""
-
-                if (!syncedLyricsRaw.isNullOrBlank()) {
-                    val parsedLines = parseLrc(syncedLyricsRaw)
-                    return@withContext Lyrics(
-                        trackId = trackId,
-                        isSynced = true,
-                        plainLyrics = plainLyrics,
-                        lines = parsedLines
-                    )
-                } else if (plainLyrics.isNotBlank()) {
-                    return@withContext Lyrics(
-                        trackId = trackId,
-                        isSynced = false,
-                        plainLyrics = plainLyrics,
-                        lines = emptyList()
-                    )
+                            if (syncedRaw.isNotBlank()) {
+                                val lines = parseLrc(syncedRaw)
+                                if (lines.isNotEmpty()) {
+                                    return@withContext Lyrics(
+                                        trackId = trackId,
+                                        isSynced = true,
+                                        plainLyrics = plainRaw,
+                                        lines = lines
+                                    )
+                                }
+                            } else if (plainRaw.isNotBlank()) {
+                                return@withContext Lyrics(
+                                    trackId = trackId,
+                                    isSynced = false,
+                                    plainLyrics = plainRaw,
+                                    lines = emptyList()
+                                )
+                            }
+                        }
+                    }
                 }
-                null
             }
+            null
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "Lyrics fetch error for $title", e)
             null
         }
     }
 
-    /**
-     * Parses LRC string format: [01:23.45] lyric text here
-     */
+    private fun cleanSearchTerm(term: String): String {
+        return term.replace(Regex("""\(.*?\)"""), "")
+            .replace(Regex("""\[.*?\]"""), "")
+            .replace(Regex("[^a-zA-Z0-9 ]"), " ")
+            .replace(Regex("""\s+"""), " ")
+            .trim()
+    }
+
     private fun parseLrc(lrcContent: String): List<LyricsLine> {
         val lines = mutableListOf<LyricsLine>()
         val regex = Regex("""\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)""")

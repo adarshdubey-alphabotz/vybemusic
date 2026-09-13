@@ -18,6 +18,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         playerController = VybePlayerController(applicationContext)
+        com.alphabotz.vybemusic.core.storage.UserProfileManager.init(applicationContext)
 
         setContent {
             VybeMusicTheme {

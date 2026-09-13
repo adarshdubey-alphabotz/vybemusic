@@ -24,9 +24,17 @@ object VybeMusicEngine {
         .readTimeout(15, TimeUnit.SECONDS)
         .build()
 
-    /**
-     * Decrypts JioSaavn encrypted_media_url to direct CDN 320kbps/160kbps audio stream URL
-     */
+    private val BAD_KEYWORDS = listOf(
+        "karaoke",
+        "instrumental",
+        "originally perfomed",
+        "tribute to",
+        "baby sleep",
+        "marimba",
+        "piano version",
+        "ringtone"
+    )
+
     fun decryptMediaUrl(encryptedUrl: String): String {
         return try {
             val keyBytes = DES_KEY.toByteArray(Charsets.UTF_8)
@@ -44,106 +52,100 @@ object VybeMusicEngine {
         }
     }
 
-    /**
-     * Instant seed tracks displayed in 0ms so the user never sees an empty screen
-     */
     fun getInitialSeedTracks(): List<Track> {
         return listOf(
             Track(
-                id = "J1ejXBn3",
-                title = "Starboy",
-                artist = "The Weeknd, Daft Punk",
-                album = "Starboy",
-                durationSeconds = 231,
-                artworkUrl = "https://c.saavncdn.com/320/Starboy-Tamil-2023-20240404043449-500x500.jpg",
-                streamUrl = "https://aac.saavncdn.com/320/f7bd814ccabdbe44b0b5952e6adda39b_320.mp4",
-                audioQuality = "320kbps Lossless AAC",
-                language = "English"
-            ),
-            Track(
                 id = "rjkrTnma",
                 title = "Kesariya",
-                artist = "Arijit Singh, Pritam",
+                artist = "Pritam, Arijit Singh, Amitabh Bhattacharya - Brahmastra",
                 album = "Brahmastra",
-                durationSeconds = 268,
+                durationSeconds = 268L,
                 artworkUrl = "https://c.saavncdn.com/871/Brahmastra-Original-Motion-Picture-Soundtrack-Hindi-2022-20221006155213-500x500.jpg",
                 streamUrl = "https://aac.saavncdn.com/871/c2febd353f3a076a406fa37510f31f9f_320.mp4",
                 audioQuality = "320kbps Lossless AAC",
-                language = "Hindi"
+                language = "Hindi/English"
             ),
             Track(
                 id = "PfcG4gJU",
                 title = "Excuses",
-                artist = "AP Dhillon, Gurinder Gill",
+                artist = "AP Dhillon, Gurinder Gill, Intense - Excuses",
                 album = "Excuses",
-                durationSeconds = 176,
+                durationSeconds = 177L,
                 artworkUrl = "https://c.saavncdn.com/890/Excuses-English-2021-20210930112054-500x500.jpg",
                 streamUrl = "https://aac.saavncdn.com/890/a18aabc4681dc6c334d5d29b67e84a0f_320.mp4",
                 audioQuality = "320kbps Lossless AAC",
-                language = "Punjabi"
+                language = "Hindi/English"
             ),
             Track(
-                id = "37a12qrO",
-                title = "Sunflower",
-                artist = "Post Malone, Swae Lee",
-                album = "Spider-Man: Into the Spider-Verse",
-                durationSeconds = 158,
-                artworkUrl = "https://c.saavncdn.com/156/ZZang-KARAOKE-2024-POP-Vol-48-Instrumental-2024-20260807162307-500x500.jpg",
-                streamUrl = "https://aac.saavncdn.com/156/4b8d33808605485d7ec127b96141a7ae_320.mp4",
+                id = "1e0En7YX",
+                title = "Pehle Bhi Main",
+                artist = "Vishal Mishra, Raj Shekhar - ANIMAL",
+                album = "ANIMAL",
+                durationSeconds = 250L,
+                artworkUrl = "https://c.saavncdn.com/092/ANIMAL-Hindi-2023-20260724191152-500x500.jpg",
+                streamUrl = "https://aac.saavncdn.com/092/81b52beea90f186f27cf5c5eead972c8_320.mp4",
                 audioQuality = "320kbps Lossless AAC",
-                language = "English"
+                language = "Hindi/English"
             ),
             Track(
-                id = "MpioDMVf",
-                title = "Shape of You",
-                artist = "Ed Sheeran",
-                album = "Divide",
-                durationSeconds = 233,
-                artworkUrl = "https://c.saavncdn.com/551/Sakura-Sakura-Best-Violin-Instrumental-2025-20250706140133-500x500.jpg",
-                streamUrl = "https://aac.saavncdn.com/551/b790d860770f04780e5fe745a60521e3_320.mp4",
+                id = "qZtKBMZ_",
+                title = "Apna Bana Le",
+                artist = "Sachin-Jigar, Arijit Singh - Bhediya",
+                album = "Bhediya",
+                durationSeconds = 261L,
+                artworkUrl = "https://c.saavncdn.com/815/Bhediya-Hindi-2023-20230927155213-500x500.jpg",
+                streamUrl = "https://aac.saavncdn.com/815/483a6e118e8108cbb3e5cd8701674f32_320.mp4",
                 audioQuality = "320kbps Lossless AAC",
-                language = "English"
+                language = "Hindi/English"
             ),
             Track(
-                id = "CEW6mQiQ",
-                title = "Blinding Lights",
-                artist = "The Weeknd",
-                album = "After Hours",
-                durationSeconds = 200,
-                artworkUrl = "https://c.saavncdn.com/809/Mainstream-Overtures-Instrumental-2026-20260505080135-500x500.jpg",
-                streamUrl = "https://aac.saavncdn.com/809/4805bce54d5079d05c8eba3678b27a35_320.mp4",
+                id = "faloMmjX",
+                title = "Chaleya",
+                artist = "Anirudh Ravichander, Arijit Singh, Shilpa Rao - Jawan",
+                album = "Jawan",
+                durationSeconds = 200L,
+                artworkUrl = "https://c.saavncdn.com/047/Jawan-Hindi-2023-20230921190854-500x500.jpg",
+                streamUrl = "https://aac.saavncdn.com/047/d1366530468931703ac909e82a3ee788_320.mp4",
                 audioQuality = "320kbps Lossless AAC",
-                language = "English"
+                language = "Hindi/English"
             ),
             Track(
-                id = "8GjYgd0S",
-                title = "Levitating",
-                artist = "Dua Lipa",
-                album = "Future Nostalgia",
-                durationSeconds = 203,
-                artworkUrl = "https://c.saavncdn.com/405/Beb-Roca-xitos-Populares-Sesiones-de-Sue-o-Zen-Piano-Instrumental-Version-Instrumental-2026-20260218165802-500x500.jpg",
-                streamUrl = "https://aac.saavncdn.com/405/634f4951f42a6ca436bacb3d6ccc8d65_320.mp4",
+                id = "M7k5t7vw",
+                title = "Lover",
+                artist = "Diljit Dosanjh - MoonChild Era",
+                album = "MoonChild Era",
+                durationSeconds = 190L,
+                artworkUrl = "https://c.saavncdn.com/209/MoonChild-Era-Punjabi-2021-20240715073449-500x500.jpg",
+                streamUrl = "https://aac.saavncdn.com/209/88cd9a1cc0af8768d67272876bb09851_320.mp4",
                 audioQuality = "320kbps Lossless AAC",
-                language = "English"
+                language = "Hindi/English"
             ),
             Track(
-                id = "idS5a57X",
-                title = "Stay",
-                artist = "The Kid LAROI, Justin Bieber",
-                album = "F*CK LOVE 3",
-                durationSeconds = 141,
-                artworkUrl = "https://c.saavncdn.com/543/ZZang-KARAOKE-Greatest-POP-Vol-9-Instrumental-2024-20260120071413-500x500.jpg",
-                streamUrl = "https://aac.saavncdn.com/543/960a993e6eeedfa63ad9efff2f94b01a_320.mp4",
+                id = "pyJaNwrF",
+                title = "Faded",
+                artist = "Veronica Bravo, Le Bober, Deep Mage - Faded",
+                album = "Faded",
+                durationSeconds = 165L,
+                artworkUrl = "https://c.saavncdn.com/670/Faded-Instrumental-2022-20260324143104-500x500.jpg",
+                streamUrl = "https://aac.saavncdn.com/670/31d24c80462a61591ceabf81d1c749ae_320.mp4",
                 audioQuality = "320kbps Lossless AAC",
-                language = "English"
+                language = "Hindi/English"
+            ),
+            Track(
+                id = "J1ejXBn3",
+                title = "Starboy",
+                artist = "vaarairuthi - Starboy",
+                album = "Starboy",
+                durationSeconds = 236L,
+                artworkUrl = "https://c.saavncdn.com/320/Starboy-Tamil-2023-20240404043449-500x500.jpg",
+                streamUrl = "https://aac.saavncdn.com/320/f7bd814ccabdbe44b0b5952e6adda39b_320.mp4",
+                audioQuality = "320kbps Lossless AAC",
+                language = "Hindi/English"
             )
         )
     }
 
-    /**
-     * Searches tracks across JioSaavn 100M+ catalog with 320kbps audio streams
-     */
-    suspend fun searchTracks(query: String, page: Int = 1, limit: Int = 20): List<Track> = withContext(Dispatchers.IO) {
+    suspend fun searchTracks(query: String, page: Int = 1, limit: Int = 25): List<Track> = withContext(Dispatchers.IO) {
         try {
             val encodedQuery = URLEncoder.encode(query, "UTF-8")
             val url = "$BASE_URL?__call=search.getResults&_format=json&_marker=0&api_version=4&ctx=web6dot0&q=$encodedQuery&p=$page&n=$limit"
@@ -167,18 +169,14 @@ object VybeMusicEngine {
         }
     }
 
-    /**
-     * Fetches Top Trending Songs with live fallback
-     */
     suspend fun getTrendingTracks(genreOrMood: String = "trending"): List<Track> = withContext(Dispatchers.IO) {
         val query = when (genreOrMood.lowercase()) {
-            "⚡ energetic", "workout" -> "workout energetic hits"
-            "🧠 focus / study", "focus" -> "lofi chill study beats"
-            "🌙 night drive" -> "night drive synthwave phonk"
-            "🎧 lo-fi" -> "lofi hip hop relaxing"
-            "🧘 relax" -> "relaxing acoustic peaceful"
-            "new release" -> "latest new english hits"
-            else -> "top billboard trending hits"
+            "⚡ new release", "new release" -> "latest bollywood punjabi hits"
+            "🔥 trending", "trending" -> "top trending hindi english hits"
+            "🎧 lo-fi", "lofi" -> "lofi hindi acoustic chill"
+            "🌙 night drive" -> "night drive phonk beats"
+            "🧠 focus", "focus" -> "deep focus study chill"
+            else -> "top bollywood trending songs"
         }
 
         val networkTracks = searchTracks(query, page = 1, limit = 25)
@@ -230,6 +228,13 @@ object VybeMusicEngine {
                     ?: "Various Artists"
             )
 
+            // Filter out junk / karaoke / covers
+            val lowerTitle = title.lowercase()
+            val lowerArtist = artist.lowercase()
+            if (BAD_KEYWORDS.any { lowerTitle.contains(it) || lowerArtist.contains(it) }) {
+                return null
+            }
+
             val album = cleanHtml(moreInfo.optString("album", "Vybe Single"))
             val durationSecs = moreInfo.optString("duration", "0").toLongOrNull() ?: 0L
 
@@ -256,7 +261,7 @@ object VybeMusicEngine {
                 artworkUrl = artworkUrl,
                 streamUrl = streamUrl,
                 audioQuality = "320kbps Lossless AAC",
-                language = obj.optString("language", "English")
+                language = obj.optString("language", "Hindi/English")
             )
         } catch (e: Exception) {
             null
