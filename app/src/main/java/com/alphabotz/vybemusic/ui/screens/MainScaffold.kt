@@ -54,7 +54,9 @@ fun MainScaffold(
                     onOpenJam = { isJamSheetOpen = true },
                     onOpenSearch = { currentTab = NavTab.SEARCH }
                 )
-                NavTab.EXPLORE -> ExploreScreen()
+                NavTab.EXPLORE -> ExploreScreen(
+                    onTrackSelect = { track, queue -> playerController.playTrack(track, queue) }
+                )
                 NavTab.SEARCH -> SearchScreen(
                     onTrackSelect = { track, queue -> playerController.playTrack(track, queue) }
                 )
@@ -141,7 +143,12 @@ fun MainScaffold(
                 onNext = { playerController.playNext() },
                 onPrevious = { playerController.playPrevious() },
                 onOpenJam = { isJamSheetOpen = true },
-                onClosePlayer = { isPlayerExpanded = false }
+                onClosePlayer = { isPlayerExpanded = false },
+                onJumpToTrack = { playerController.jumpToQueueItem(it) },
+                onRemoveFromQueue = { playerController.removeFromQueue(it) },
+                onClearQueue = { playerController.clearQueue() },
+                onToggleShuffle = { playerController.toggleShuffle() },
+                onToggleRepeat = { playerController.toggleRepeat() }
             )
         }
 

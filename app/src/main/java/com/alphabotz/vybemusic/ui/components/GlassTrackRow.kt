@@ -7,10 +7,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,8 +29,12 @@ fun GlassTrackRow(
     track: Track,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    index: Int? = null
+    index: Int? = null,
+    onPlayNext: (() -> Unit)? = null,
+    onAddToQueue: (() -> Unit)? = null
 ) {
+    var showMenu by remember { mutableStateOf(false) }
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
@@ -108,7 +112,49 @@ fun GlassTrackRow(
             }
         }
 
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // Options dropdown menu
+        if (onPlayNext != null || onAddToQueue != null) {
+            Box {
+                IconButton(
+                    onClick = { showMenu = true },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "More options",
+                        tint = Color.White.copy(alpha = 0.6f),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false },
+                    modifier = Modifier.background(Color(0xFF181A28))
+                ) {
+                    if (onPlayNext != null) {
+                        DropdownMenuItem(
+                            text = { Text("Play Next", color = Color.White) },
+                            onClick = {
+                                onPlayNext()
+                                showMenu = false
+                            }
+                        )
+                    }
+                    if (onAddToQueue != null) {
+                        DropdownMenuItem(
+                            text = { Text("Add to Queue", color = Color.White) },
+                            onClick = {
+                                onAddToQueue()
+                                showMenu = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
 
         // Circular Glass Play Icon
         Box(

@@ -9,7 +9,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
-import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -18,12 +17,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,10 +39,23 @@ fun AppleMusicPlayer(
     onPrevious: () -> Unit,
     onOpenJam: () -> Unit,
     onClosePlayer: () -> Unit,
+    onJumpToTrack: (Int) -> Unit = {},
+    onRemoveFromQueue: (Int) -> Unit = {},
+    onClearQueue: () -> Unit = {},
+    onToggleShuffle: () -> Unit = {},
+    onToggleRepeat: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val track = playbackState.currentTrack ?: return
     var showLyrics by remember { mutableStateOf(false) }
+    var showQueueSheet by remember { mutableStateOf(false) }
+
+    // Precise scrubbing state so position updates never jump while user drags
+    var isScrubbing by remember { mutableStateOf(false) }
+    var scrubPosition by remember { mutableFloatStateOf(0f) }
+
+    val totalDur = playbackState.durationMs.coerceAtLeast(1L).toFloat()
+    val sliderValue = if (isScrubbing) scrubPosition else playbackState.currentPositionMs.toFloat()
 
     DynamicMeshBackground {
         Column(
@@ -197,15 +207,17 @@ fun AppleMusicPlayer(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Scrubbable Progress Slider
-            val currentPos = playbackState.currentPositionMs.toFloat()
-            val totalDur = playbackState.durationMs.coerceAtLeast(1L).toFloat()
-            var sliderPos by remember(currentPos) { mutableFloatStateOf(currentPos) }
-
+            // Scrubbable Progress Slider with zero-lag user tracking
             Slider(
-                value = sliderPos,
-                onValueChange = { sliderPos = it },
-                onValueChangeFinished = { onSeekTo(sliderPos.toLong()) },
+                value = sliderValue.coerceIn(0f, totalDur),
+                onValueChange = {
+                    isScrubbing = true
+                    scrubPosition = it
+                },
+                onValueChangeFinished = {
+                    onSeekTo(scrubPosition.toLong())
+                    isScrubbing = false
+                },
                 valueRange = 0f..totalDur,
                 colors = SliderDefaults.colors(
                     thumbColor = VybeVolt,
@@ -221,12 +233,12 @@ fun AppleMusicPlayer(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = formatMs(sliderPos.toLong()),
+                    text = formatMs(sliderValue.toLong()),
                     fontSize = 12.sp,
                     color = VybeTextSecondary
                 )
                 Text(
-                    text = "-" + formatMs((totalDur - sliderPos).toLong()),
+                    text = "-" + formatMs((totalDur - sliderValue).toLong().coerceAtLeast(0L)),
                     fontSize = 12.sp,
                     color = VybeTextSecondary
                 )
@@ -289,7 +301,7 @@ fun AppleMusicPlayer(
                         }
                     }
 
-                    // Right Controls: Lyrics, Jam, Repeat
+                    // Right Controls: Lyrics, Jam, Queue
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -314,17 +326,39 @@ fun AppleMusicPlayer(
                             )
                         }
 
-                        // Queue View Button
-                        IconButton(onClick = onClosePlayer) {
+                        // Up Next Queue Sheet Button
+                        IconButton(onClick = { showQueueSheet = true }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.QueueMusic,
                                 contentDescription = "Queue",
-                                tint = Color.White.copy(alpha = 0.75f),
+                                tint = if (showQueueSheet) VybeVolt else Color.White.copy(alpha = 0.75f),
                                 modifier = Modifier.size(24.dp)
                             )
                         }
                     }
                 }
+            }
+        }
+
+        // Up Next Queue Modal Sheet
+        if (showQueueSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showQueueSheet = false },
+                containerColor = Color(0xFF12131F),
+                contentColor = Color.White
+            ) {
+                QueueSheet(
+                    playbackState = playbackState,
+                    onJumpToTrack = {
+                        onJumpToTrack(it)
+                        showQueueSheet = false
+                    },
+                    onRemoveFromQueue = onRemoveFromQueue,
+                    onClearQueue = onClearQueue,
+                    onToggleShuffle = onToggleShuffle,
+                    onToggleRepeat = onToggleRepeat,
+                    onClose = { showQueueSheet = false }
+                )
             }
         }
     }
