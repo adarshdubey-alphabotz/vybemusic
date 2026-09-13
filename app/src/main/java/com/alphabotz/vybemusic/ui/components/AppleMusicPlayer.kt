@@ -3,10 +3,13 @@ package com.alphabotz.vybemusic.ui.components
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -15,9 +18,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,11 +32,6 @@ import com.alphabotz.vybemusic.core.model.Track
 import com.alphabotz.vybemusic.core.playback.PlaybackState
 import com.alphabotz.vybemusic.ui.theme.*
 
-/**
- * Premium Apple Music inspired full-screen player.
- * Fluid ambient lighting, lossless audio badge, synchronized karaoke lyrics toggle,
- * and collaborative Vybe Jam controls.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppleMusicPlayer(
@@ -52,7 +53,7 @@ fun AppleMusicPlayer(
                 .fillMaxSize()
                 .statusBarsPadding()
                 .navigationBarsPadding()
-                .padding(horizontal = 24.dp, vertical = 16.dp),
+                .padding(horizontal = 20.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Top Bar
@@ -61,26 +62,35 @@ fun AppleMusicPlayer(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onClosePlayer) {
+                // Dismiss Pill Button
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(CircleShape)
+                        .background(Color(0x2BFFFFFF))
+                        .clickable { onClosePlayer() },
+                    contentAlignment = Alignment.Center
+                ) {
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowDown,
                         contentDescription = "Collapse",
                         tint = Color.White,
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(28.dp)
                     )
                 }
 
+                // Playlist / Album Label
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "PLAYING FROM PLAYLIST",
+                        text = "PLAYING FROM VYBE",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color = VybeTextTertiary,
-                        letterSpacing = 1.2.sp
+                        letterSpacing = 1.5.sp
                     )
                     Text(
                         text = if (track.album.isNotBlank()) track.album else "Vybe Hits",
-                        fontSize = 12.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color.White,
                         maxLines = 1,
@@ -88,18 +98,27 @@ fun AppleMusicPlayer(
                     )
                 }
 
-                IconButton(onClick = onOpenJam) {
+                // Jam Room Button
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(CircleShape)
+                        .background(Color(0x2BFFFFFF))
+                        .clickable { onOpenJam() },
+                    contentAlignment = Alignment.Center
+                ) {
                     Icon(
                         imageVector = Icons.Default.Group,
                         contentDescription = "Vybe Jam",
-                        tint = VybePrimary
+                        tint = VybeVolt,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // Center View: Either Album Artwork or Karaoke Lyrics
+            // Center View: 3D CoverFlow Carousel OR Karaoke Synced Lyrics
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -117,32 +136,17 @@ fun AppleMusicPlayer(
                             onSeekToLine = onSeekTo
                         )
                     } else {
-                        // 3D Apple Music Album Card
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .aspectRatio(1f)
-                                .shadow(
-                                    elevation = 28.dp,
-                                    shape = RoundedCornerShape(24.dp),
-                                    ambientColor = VybePrimary,
-                                    spotColor = VybeAccent
-                                )
-                                .clip(RoundedCornerShape(24.dp))
-                        ) {
-                            AsyncImage(
-                                model = track.artworkUrl.ifBlank { "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500" },
-                                contentDescription = track.title,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
+                        // 3D Perspective CoverFlow Carousel (Inspiration 2)
+                        CoverFlowCarousel(
+                            playbackState = playbackState,
+                            onPrevious = onPrevious,
+                            onNext = onNext
+                        )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Track Meta & Lossless Audio Badge
             Row(
@@ -154,7 +158,7 @@ fun AppleMusicPlayer(
                     Text(
                         text = track.title,
                         fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.ExtraBold,
                         color = Color.White,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -163,7 +167,7 @@ fun AppleMusicPlayer(
                         text = track.artist,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Medium,
-                        color = VybeTextSecondary,
+                        color = Color(0xFFA5AABF),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -172,8 +176,8 @@ fun AppleMusicPlayer(
                 // Apple Music Style Lossless Badge
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = VybeSurfaceElevated,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, VybeSurfaceBorder),
+                    color = Color(0x26FFFFFF),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x35FFFFFF)),
                     modifier = Modifier.padding(start = 12.dp)
                 ) {
                     Row(
@@ -181,19 +185,19 @@ fun AppleMusicPlayer(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Text(
-                            text = "LOSSLESS",
+                            text = "LOSSLESS 320K",
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Black,
-                            color = VybeEmerald,
+                            color = VybeVolt,
                             letterSpacing = 1.sp
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // Progress Slider
+            // Scrubbable Progress Slider
             val currentPos = playbackState.currentPositionMs.toFloat()
             val totalDur = playbackState.durationMs.coerceAtLeast(1L).toFloat()
             var sliderPos by remember(currentPos) { mutableFloatStateOf(currentPos) }
@@ -204,8 +208,8 @@ fun AppleMusicPlayer(
                 onValueChangeFinished = { onSeekTo(sliderPos.toLong()) },
                 valueRange = 0f..totalDur,
                 colors = SliderDefaults.colors(
-                    thumbColor = Color.White,
-                    activeTrackColor = Color.White,
+                    thumbColor = VybeVolt,
+                    activeTrackColor = VybeVolt,
                     inactiveTrackColor = Color.White.copy(alpha = 0.2f)
                 ),
                 modifier = Modifier.fillMaxWidth()
@@ -228,119 +232,200 @@ fun AppleMusicPlayer(
                 )
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // Controls Bar (Prev, Play/Pause, Next)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
+            // Floating Frosted Glass Liquid Player Dock (Inspiration 2)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(32.dp))
+                    .background(Color(0xDD181926))
+                    .border(1.dp, Color(0x38FFFFFF), RoundedCornerShape(32.dp))
+                    .padding(horizontal = 14.dp, vertical = 10.dp)
             ) {
-                IconButton(onClick = { /* Toggle Shuffle */ }) {
-                    Icon(
-                        imageVector = Icons.Default.Shuffle,
-                        contentDescription = "Shuffle",
-                        tint = if (playbackState.isShuffle) VybePrimary else VybeTextTertiary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-
-                IconButton(onClick = onPrevious) {
-                    Icon(
-                        imageVector = Icons.Default.SkipPrevious,
-                        contentDescription = "Previous",
-                        tint = Color.White,
-                        modifier = Modifier.size(38.dp)
-                    )
-                }
-
-                // Apple Music Large Play Button
-                Surface(
-                    shape = CircleShape,
-                    color = Color.White,
-                    modifier = Modifier.size(70.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(
-                        onClick = onTogglePlayPause,
-                        modifier = Modifier.fillMaxSize()
+                    // Left Controls: Prev, Play/Pause, Next
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(
-                            imageVector = if (playbackState.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                            contentDescription = "Play/Pause",
-                            tint = Color.Black,
-                            modifier = Modifier.size(36.dp)
-                        )
+                        IconButton(onClick = onPrevious) {
+                            Icon(
+                                imageVector = Icons.Default.SkipPrevious,
+                                contentDescription = "Previous",
+                                tint = Color.White,
+                                modifier = Modifier.size(30.dp)
+                            )
+                        }
+
+                        // Play/Pause Circular Pill
+                        Box(
+                            modifier = Modifier
+                                .size(50.dp)
+                                .clip(CircleShape)
+                                .background(VybeVolt)
+                                .clickable { onTogglePlayPause() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = if (playbackState.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                contentDescription = "Play/Pause",
+                                tint = Color.Black,
+                                modifier = Modifier.size(30.dp)
+                            )
+                        }
+
+                        IconButton(onClick = onNext) {
+                            Icon(
+                                imageVector = Icons.Default.SkipNext,
+                                contentDescription = "Next",
+                                tint = Color.White,
+                                modifier = Modifier.size(30.dp)
+                            )
+                        }
+                    }
+
+                    // Right Controls: Lyrics, Jam, Repeat
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        // Lyrics Toggle Button
+                        IconButton(onClick = { showLyrics = !showLyrics }) {
+                            Icon(
+                                imageVector = if (showLyrics) Icons.Filled.ChatBubble else Icons.Outlined.ChatBubbleOutline,
+                                contentDescription = "Karaoke Lyrics",
+                                tint = if (showLyrics) VybeVolt else Color.White.copy(alpha = 0.75f),
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+
+                        // Jam Room Button
+                        IconButton(onClick = onOpenJam) {
+                            Icon(
+                                imageVector = Icons.Default.Group,
+                                contentDescription = "Vybe Jam",
+                                tint = VybeCyan,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+
+                        // Queue View Button
+                        IconButton(onClick = onClosePlayer) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.QueueMusic,
+                                contentDescription = "Queue",
+                                tint = Color.White.copy(alpha = 0.75f),
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
                     }
                 }
-
-                IconButton(onClick = onNext) {
-                    Icon(
-                        imageVector = Icons.Default.SkipNext,
-                        contentDescription = "Next",
-                        tint = Color.White,
-                        modifier = Modifier.size(38.dp)
-                    )
-                }
-
-                IconButton(onClick = { /* Toggle Repeat */ }) {
-                    Icon(
-                        imageVector = Icons.Default.Repeat,
-                        contentDescription = "Repeat",
-                        tint = if (playbackState.isRepeat) VybePrimary else VybeTextTertiary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
             }
+        }
+    }
+}
 
-            Spacer(modifier = Modifier.height(24.dp))
+/**
+ * 3D Perspective CoverFlow Carousel (Inspiration 2)
+ */
+@Composable
+fun CoverFlowCarousel(
+    playbackState: PlaybackState,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit
+) {
+    val track = playbackState.currentTrack ?: return
+    val queue = playbackState.queue
+    val currentIndex = playbackState.queueIndex
 
-            // Bottom Action Bar: Karaoke Lyrics Button & Vybe Jam indicator
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+    val prevTrack = if (queue.isNotEmpty() && currentIndex > 0) queue[currentIndex - 1] else null
+    val nextTrack = if (queue.isNotEmpty() && currentIndex < queue.size - 1) queue[currentIndex + 1] else null
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(290.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        // Left Flank Card (Previous Song)
+        if (prevTrack != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .offset(x = 10.dp)
+                    .graphicsLayer {
+                        rotationY = 32f
+                        scaleX = 0.78f
+                        scaleY = 0.78f
+                        alpha = 0.55f
+                        cameraDistance = 12f * density
+                    }
+                    .size(220.dp)
+                    .clip(RoundedCornerShape(22.dp))
+                    .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(22.dp))
+                    .clickable { onPrevious() }
             ) {
-                IconButton(onClick = { showLyrics = !showLyrics }) {
-                    Icon(
-                        imageVector = if (showLyrics) Icons.Filled.ChatBubble else Icons.Outlined.ChatBubbleOutline,
-                        contentDescription = "Karaoke Lyrics",
-                        tint = if (showLyrics) VybePrimary else VybeTextSecondary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-
-                Button(
-                    onClick = onOpenJam,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = GlassOverlay
-                    ),
-                    shape = RoundedCornerShape(20.dp),
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Group,
-                        contentDescription = "Vybe Jam",
-                        tint = VybeCyan,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "Vybe Jam",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                }
-
-                IconButton(onClick = { /* Queue view */ }) {
-                    Icon(
-                        imageVector = Icons.Default.QueueMusic,
-                        contentDescription = "Queue",
-                        tint = VybeTextSecondary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
+                AsyncImage(
+                    model = prevTrack.artworkUrl.ifBlank { "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400" },
+                    contentDescription = prevTrack.title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
+        }
+
+        // Right Flank Card (Next Song)
+        if (nextTrack != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .offset(x = (-10).dp)
+                    .graphicsLayer {
+                        rotationY = -32f
+                        scaleX = 0.78f
+                        scaleY = 0.78f
+                        alpha = 0.55f
+                        cameraDistance = 12f * density
+                    }
+                    .size(220.dp)
+                    .clip(RoundedCornerShape(22.dp))
+                    .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(22.dp))
+                    .clickable { onNext() }
+            ) {
+                AsyncImage(
+                    model = nextTrack.artworkUrl.ifBlank { "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400" },
+                    contentDescription = nextTrack.title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+
+        // Center Hero Card (Current Song)
+        Box(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .size(260.dp)
+                .shadow(
+                    elevation = 32.dp,
+                    shape = RoundedCornerShape(26.dp),
+                    ambientColor = VybeVolt.copy(alpha = 0.35f),
+                    spotColor = VybeAccent.copy(alpha = 0.5f)
+                )
+                .clip(RoundedCornerShape(26.dp))
+                .border(1.dp, Color(0x40FFFFFF), RoundedCornerShape(26.dp))
+        ) {
+            AsyncImage(
+                model = track.artworkUrl.ifBlank { "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500" },
+                contentDescription = track.title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
         }
     }
 }

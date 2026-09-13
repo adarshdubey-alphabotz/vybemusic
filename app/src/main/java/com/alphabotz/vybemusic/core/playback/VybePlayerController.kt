@@ -1,9 +1,13 @@
 package com.alphabotz.vybemusic.core.playback
 
 import android.content.Context
+import android.util.Log
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import com.alphabotz.vybemusic.core.model.Lyrics
 import com.alphabotz.vybemusic.core.model.Track
 import com.alphabotz.vybemusic.core.network.LrclibLyricsApi
@@ -24,7 +28,8 @@ data class PlaybackState(
     val queue: List<Track> = emptyList(),
     val queueIndex: Int = 0,
     val activeLyrics: Lyrics? = null,
-    val activeLyricLineIndex: Int = -1
+    val activeLyricLineIndex: Int = -1,
+    val errorMessage: String? = null
 )
 
 class VybePlayerController(private val context: Context) {
@@ -41,25 +46,44 @@ class VybePlayerController(private val context: Context) {
     }
 
     private fun initializePlayer() {
-        exoPlayer = ExoPlayer.Builder(context).build().apply {
-            addListener(object : Player.Listener {
-                override fun onIsPlayingChanged(isPlaying: Boolean) {
-                    _playbackState.value = _playbackState.value.copy(isPlaying = isPlaying)
-                    VybeJamEngine.syncPlaybackState(isPlaying, currentPosition)
-                }
+        val httpDataSourceFactory = DefaultHttpDataSource.Factory()
+            .setUserAgent("Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36")
+            .setAllowCrossProtocolRedirects(true)
+            .setConnectTimeoutMs(15000)
+            .setReadTimeoutMs(20000)
 
-                override fun onPlaybackStateChanged(playbackState: Int) {
-                    val isBuffering = playbackState == Player.STATE_BUFFERING
-                    _playbackState.value = _playbackState.value.copy(
-                        isBuffering = isBuffering,
-                        durationMs = duration.coerceAtLeast(0L)
-                    )
-                    if (playbackState == Player.STATE_ENDED) {
-                        playNext()
+        val mediaSourceFactory = DefaultMediaSourceFactory(context)
+            .setDataSourceFactory(httpDataSourceFactory)
+
+        exoPlayer = ExoPlayer.Builder(context)
+            .setMediaSourceFactory(mediaSourceFactory)
+            .build().apply {
+                addListener(object : Player.Listener {
+                    override fun onIsPlayingChanged(isPlaying: Boolean) {
+                        _playbackState.value = _playbackState.value.copy(isPlaying = isPlaying)
+                        VybeJamEngine.syncPlaybackState(isPlaying, currentPosition)
                     }
-                }
-            })
-        }
+
+                    override fun onPlaybackStateChanged(playbackState: Int) {
+                        val isBuffering = playbackState == Player.STATE_BUFFERING
+                        _playbackState.value = _playbackState.value.copy(
+                            isBuffering = isBuffering,
+                            durationMs = duration.coerceAtLeast(0L)
+                        )
+                        if (playbackState == Player.STATE_ENDED) {
+                            playNext()
+                        }
+                    }
+
+                    override fun onPlayerError(error: PlaybackException) {
+                        Log.e("VybePlayerController", "Playback error: ${error.errorCodeName}", error)
+                        _playbackState.value = _playbackState.value.copy(
+                            errorMessage = error.localizedMessage,
+                            isPlaying = false
+                        )
+                    }
+                })
+            }
     }
 
     fun playTrack(track: Track, newQueue: List<Track> = listOf(track)) {
@@ -69,7 +93,8 @@ class VybePlayerController(private val context: Context) {
             queue = newQueue,
             queueIndex = index,
             activeLyrics = null,
-            activeLyricLineIndex = -1
+            activeLyricLineIndex = -1,
+            errorMessage = null
         )
 
         // Fetch Synced Lyrics in Background
@@ -82,6 +107,8 @@ class VybePlayerController(private val context: Context) {
 
         // Start Streaming with ExoPlayer
         exoPlayer?.apply {
+            stop()
+            clearMediaItems()
             val mediaItem = MediaItem.fromUri(track.streamUrl)
             setMediaItem(mediaItem)
             prepare()
@@ -94,6 +121,9 @@ class VybePlayerController(private val context: Context) {
             if (it.isPlaying) {
                 it.pause()
             } else {
+                if (it.playbackState == Player.STATE_ENDED) {
+                    it.seekTo(0)
+                }
                 it.play()
             }
         }
@@ -136,7 +166,7 @@ class VybePlayerController(private val context: Context) {
                         updateActiveLyricLine(pos)
                     }
                 }
-                delay(200) // update 5 times a second for fluid lyrics and progress bar
+                delay(200)
             }
         }
     }

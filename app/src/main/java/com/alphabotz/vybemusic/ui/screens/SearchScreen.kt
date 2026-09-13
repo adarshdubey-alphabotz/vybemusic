@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import com.alphabotz.vybemusic.core.model.Track
 import com.alphabotz.vybemusic.core.network.VybeMusicEngine
 import com.alphabotz.vybemusic.ui.theme.*
+import com.alphabotz.vybemusic.ui.components.GlassTrackRow
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -104,7 +105,7 @@ fun SearchScreen(
                 modifier = Modifier.fillMaxSize()
             ) {
                 itemsIndexed(searchResults) { index, track ->
-                    TrackRowItem(
+                    GlassTrackRow(
                         index = index + 1,
                         track = track,
                         onClick = { onTrackSelect(track, searchResults) }

@@ -1,8 +1,10 @@
 package com.alphabotz.vybemusic.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
@@ -23,9 +25,6 @@ import coil.compose.AsyncImage
 import com.alphabotz.vybemusic.core.playback.PlaybackState
 import com.alphabotz.vybemusic.ui.theme.*
 
-/**
- * YouTube Music inspired floating bottom pill mini-player.
- */
 @Composable
 fun VybeMiniPlayer(
     playbackState: PlaybackState,
@@ -40,46 +39,40 @@ fun VybeMiniPlayer(
         (playbackState.currentPositionMs.toFloat() / playbackState.durationMs.toFloat()).coerceIn(0f, 1f)
     } else 0f
 
-    Surface(
-        color = VybeSurfaceElevated,
-        shape = RoundedCornerShape(16.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, VybeSurfaceBorder),
-        shadowElevation = 12.dp,
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .clip(RoundedCornerShape(22.dp))
+            .background(Color(0xE6141522))
+            .border(1.dp, Color(0x3DFFFFFF), RoundedCornerShape(22.dp))
             .clickable { onClick() }
     ) {
         Column {
-            // Top Slim Progress Bar
-            LinearProgressIndicator(
-                progress = { progress },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(2.dp),
-                color = VybePrimary,
-                trackColor = Color.Transparent
-            )
-
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(8.dp)
+                    .padding(horizontal = 10.dp, vertical = 8.dp)
             ) {
-                // Artwork
-                AsyncImage(
-                    model = track.artworkUrl.ifBlank { "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200" },
-                    contentDescription = track.title,
-                    contentScale = ContentScale.Crop,
+                // Artwork Squircle
+                Box(
                     modifier = Modifier
                         .size(46.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                )
+                        .clip(RoundedCornerShape(12.dp))
+                        .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(12.dp))
+                ) {
+                    AsyncImage(
+                        model = track.artworkUrl.ifBlank { "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200" },
+                        contentDescription = track.title,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                // Track Info
+                // Track Title & Artist
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = track.title,
@@ -92,31 +85,52 @@ fun VybeMiniPlayer(
                     Text(
                         text = track.artist,
                         fontSize = 12.sp,
-                        color = VybeTextSecondary,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFFA0A5BA),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
 
-                // Controls
-                IconButton(onClick = onTogglePlayPause) {
+                // Play / Pause Circle Button
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(CircleShape)
+                        .background(if (playbackState.isPlaying) VybeVolt else Color(0x26FFFFFF))
+                        .clickable { onTogglePlayPause() },
+                    contentAlignment = Alignment.Center
+                ) {
                     Icon(
                         imageVector = if (playbackState.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                         contentDescription = "Play/Pause",
-                        tint = Color.White,
-                        modifier = Modifier.size(28.dp)
+                        tint = if (playbackState.isPlaying) Color.Black else Color.White,
+                        modifier = Modifier.size(22.dp)
                     )
                 }
 
+                Spacer(modifier = Modifier.width(6.dp))
+
+                // Next Button
                 IconButton(onClick = onNext) {
                     Icon(
                         imageVector = Icons.Default.SkipNext,
                         contentDescription = "Next",
-                        tint = VybeTextSecondary,
-                        modifier = Modifier.size(28.dp)
+                        tint = Color.White.copy(alpha = 0.8f),
+                        modifier = Modifier.size(26.dp)
                     )
                 }
             }
+
+            // Slim Volt Progress Track
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(2.5.dp),
+                color = VybeVolt,
+                trackColor = Color(0x22FFFFFF)
+            )
         }
     }
 }
