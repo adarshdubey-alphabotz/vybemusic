@@ -20,6 +20,7 @@ class MainActivity : ComponentActivity() {
         playerController = VybePlayerController.getInstance(applicationContext)
         com.alphabotz.vybemusic.core.storage.UserProfileManager.init(applicationContext)
         com.alphabotz.vybemusic.core.storage.PlaylistManager.init(applicationContext)
+        com.alphabotz.vybemusic.core.storage.DownloadManager.init(applicationContext)
 
         // Spotify/Apple Music standard: back button minimises app without terminating audio
         onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {

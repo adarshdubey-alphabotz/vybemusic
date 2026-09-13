@@ -1,6 +1,7 @@
 package com.alphabotz.vybemusic.ui.components
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,7 +17,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -53,6 +56,7 @@ fun AppleMusicPlayer(
     var showLyrics by remember { mutableStateOf(false) }
     var showQueueSheet by remember { mutableStateOf(false) }
     var showSleepPicker by remember { mutableStateOf(false) }
+    var isVinylMode by remember { mutableStateOf(false) }
 
     // Precise scrubbing state so position updates never jump while user drags
     var isScrubbing by remember { mutableStateOf(false) }
@@ -150,12 +154,48 @@ fun AppleMusicPlayer(
                             onSeekToLine = onSeekTo
                         )
                     } else {
-                        // 3D Perspective CoverFlow Carousel (Inspiration 2)
-                        CoverFlowCarousel(
-                            playbackState = playbackState,
-                            onPrevious = onPrevious,
-                            onNext = onNext
-                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CoverFlowCarousel(
+                                playbackState = playbackState,
+                                onPrevious = onPrevious,
+                                onNext = onNext,
+                                isVinylMode = isVinylMode
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Mode Toggle: Artwork vs Vinyl 33 RPM
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Surface(
+                                    shape = RoundedCornerShape(14.dp),
+                                    color = if (!isVinylMode) Color(0x33FFFFFF) else Color(0x11FFFFFF),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, if (!isVinylMode) VybeVolt else Color(0x22FFFFFF)),
+                                    modifier = Modifier.clickable { isVinylMode = false }
+                                ) {
+                                    Text(
+                                        text = "🖼️ Artwork",
+                                        color = if (!isVinylMode) VybeVolt else VybeTextSecondary,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                    )
+                                }
+                                Surface(
+                                    shape = RoundedCornerShape(14.dp),
+                                    color = if (isVinylMode) Color(0x33FFFFFF) else Color(0x11FFFFFF),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, if (isVinylMode) VybeVolt else Color(0x22FFFFFF)),
+                                    modifier = Modifier.clickable { isVinylMode = true }
+                                ) {
+                                    Text(
+                                        text = "💿 Vinyl Spin",
+                                        color = if (isVinylMode) VybeVolt else VybeTextSecondary,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -251,7 +291,23 @@ fun AppleMusicPlayer(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            // Time tooltip while scrubbing
+            if (isScrubbing) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xEE12131F),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, VybeVolt)
+                ) {
+                    Text(
+                        text = "${formatMs(scrubPosition.toLong())} / ${formatMs(totalDur.toLong())}",
+                        color = VybeVolt,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+            }
 
             // Scrubbable Progress Slider with zero-lag user tracking
             Slider(
@@ -479,7 +535,8 @@ fun AppleMusicPlayer(
 fun CoverFlowCarousel(
     playbackState: PlaybackState,
     onPrevious: () -> Unit,
-    onNext: () -> Unit
+    onNext: () -> Unit,
+    isVinylMode: Boolean = false
 ) {
     val track = playbackState.currentTrack ?: return
     val queue = playbackState.queue
@@ -495,7 +552,7 @@ fun CoverFlowCarousel(
         contentAlignment = Alignment.Center
     ) {
         // Left Flank Card (Previous Song)
-        if (prevTrack != null) {
+        if (prevTrack != null && !isVinylMode) {
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
@@ -522,7 +579,7 @@ fun CoverFlowCarousel(
         }
 
         // Right Flank Card (Next Song)
-        if (nextTrack != null) {
+        if (nextTrack != null && !isVinylMode) {
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
@@ -549,25 +606,96 @@ fun CoverFlowCarousel(
         }
 
         // Center Hero Card (Current Song)
-        Box(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .size(260.dp)
-                .shadow(
-                    elevation = 32.dp,
-                    shape = RoundedCornerShape(26.dp),
-                    ambientColor = VybeVolt.copy(alpha = 0.35f),
-                    spotColor = VybeAccent.copy(alpha = 0.5f)
-                )
-                .clip(RoundedCornerShape(26.dp))
-                .border(1.dp, Color(0x40FFFFFF), RoundedCornerShape(26.dp))
-        ) {
-            AsyncImage(
-                model = track.artworkUrl.ifBlank { "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500" },
-                contentDescription = track.title,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
+        if (isVinylMode) {
+            val infiniteTransition = rememberInfiniteTransition(label = "VinylSpin")
+            val angle by infiniteTransition.animateFloat(
+                initialValue = 0f,
+                targetValue = 360f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(durationMillis = 6000, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart
+                ),
+                label = "VinylAngle"
             )
+            val currentAngle = if (playbackState.isPlaying) angle else 0f
+
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(265.dp)
+                    .rotate(currentAngle)
+                    .shadow(32.dp, CircleShape, ambientColor = VybeVolt.copy(alpha = 0.4f), spotColor = Color.Black)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.radialGradient(
+                            listOf(
+                                Color(0xFF22222A),
+                                Color(0xFF0F0F14),
+                                Color(0xFF1E1E26),
+                                Color(0xFF0A0A0E),
+                                Color(0xFF16161E),
+                                Color(0xFF060608)
+                            )
+                        )
+                    )
+                    .border(3.dp, Color(0x33FFFFFF), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                // Vinyl Grooves
+                Box(
+                    modifier = Modifier
+                        .size(200.dp)
+                        .border(1.dp, Color(0x22FFFFFF), CircleShape)
+                )
+                Box(
+                    modifier = Modifier
+                        .size(150.dp)
+                        .border(1.dp, Color(0x18FFFFFF), CircleShape)
+                )
+                // Center Album Label
+                Box(
+                    modifier = Modifier
+                        .size(108.dp)
+                        .clip(CircleShape)
+                        .border(2.dp, VybeVolt, CircleShape)
+                ) {
+                    AsyncImage(
+                        model = track.artworkUrl,
+                        contentDescription = track.title,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+                // Center Spindle Hole
+                Box(
+                    modifier = Modifier
+                        .size(18.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF060608))
+                        .border(1.5.dp, Color(0x66FFFFFF), CircleShape)
+                )
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(260.dp)
+                    .shadow(
+                        elevation = 32.dp,
+                        shape = RoundedCornerShape(26.dp),
+                        ambientColor = VybeVolt.copy(alpha = 0.35f),
+                        spotColor = VybeAccent.copy(alpha = 0.5f)
+                    )
+                    .clip(RoundedCornerShape(26.dp))
+                    .border(1.dp, Color(0x40FFFFFF), RoundedCornerShape(26.dp))
+            ) {
+                AsyncImage(
+                    model = track.artworkUrl.ifBlank { "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500" },
+                    contentDescription = track.title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
         }
     }
 }

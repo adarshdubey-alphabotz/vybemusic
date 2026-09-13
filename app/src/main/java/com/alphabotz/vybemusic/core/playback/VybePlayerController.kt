@@ -169,34 +169,40 @@ class VybePlayerController(private val context: Context) {
         }
 
         // Start Streaming with ExoPlayer & Rich MediaMetadata
-        exoPlayer?.apply {
-            stop()
-            clearMediaItems()
+        scope.launch {
+            val resolvedStream = VybeMusicEngine.resolveStreamUrl(track)
+            withContext(Dispatchers.Main) {
+                exoPlayer?.apply {
+                    stop()
+                    clearMediaItems()
 
-            val metadata = MediaMetadata.Builder()
-                .setTitle(track.title)
-                .setArtist(track.artist)
-                .setAlbumTitle(track.album)
-                .setArtworkUri(Uri.parse(track.artworkUrl))
-                .build()
+                    val metadata = MediaMetadata.Builder()
+                        .setTitle(track.title)
+                        .setArtist(track.artist)
+                        .setAlbumTitle(track.album)
+                        .setArtworkUri(Uri.parse(track.artworkUrl))
+                        .build()
 
-            val mediaItem = MediaItem.Builder()
-                .setUri(track.streamUrl)
-                .setMediaMetadata(metadata)
-                .build()
+                    val mediaItem = MediaItem.Builder()
+                        .setUri(resolvedStream)
+                        .setMediaMetadata(metadata)
+                        .build()
 
-            setMediaItem(mediaItem)
-            prepare()
-            play()
+                    setMediaItem(mediaItem)
+                    prepare()
+                    play()
+                }
+                startPlaybackService()
+            }
         }
-
-        startPlaybackService()
 
         // Contextual Smart Auto-Queue based on playing track's artist and style
         if (newQueue.size <= 3) {
             scope.launch {
                 val suggestions = VybeMusicEngine.getSimilarTracks(track)
-                val cleanSuggestions = suggestions.filter { s -> newQueue.none { it.id == s.id } }
+                val cleanSuggestions = suggestions.filter { s ->
+                    newQueue.none { it.id == s.id || it.title.equals(s.title, ignoreCase = true) }
+                }
                 if (cleanSuggestions.isNotEmpty()) {
                     _playbackState.value = _playbackState.value.copy(
                         queue = _playbackState.value.queue + cleanSuggestions

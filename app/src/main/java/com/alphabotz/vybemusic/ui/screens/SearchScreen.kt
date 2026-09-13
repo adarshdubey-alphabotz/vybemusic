@@ -111,7 +111,7 @@ fun SearchScreen(
                     GlassTrackRow(
                         index = index + 1,
                         track = track,
-                        onClick = { onTrackSelect(track, searchResults) },
+                        onClick = { onTrackSelect(track, listOf(track)) },
                         onPlayNext = { onPlayNext(track) },
                         onAddToQueue = { onAddToQueue(track) }
                     )

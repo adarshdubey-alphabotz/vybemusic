@@ -44,43 +44,43 @@ data class ArtistItem(
 
 val PRESET_ARTISTS = listOf(
     // Hip-Hop / Rap
-    ArtistItem("2pac", "2Pac", "Hip-Hop / 90s Legend", "Hip-Hop", "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=300"),
-    ArtistItem("weeknd", "The Weeknd", "R&B / Synthpop", "Pop", "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300"),
-    ArtistItem("eminem", "Eminem", "Hip-Hop / Rap", "Hip-Hop", "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300"),
-    ArtistItem("travis", "Travis Scott", "Trap / Psychedelic Rap", "Hip-Hop", "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=300"),
-    ArtistItem("drake", "Drake", "Hip-Hop / Melodic", "Hip-Hop", "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300"),
-    ArtistItem("kendrick", "Kendrick Lamar", "Conscious Rap", "Hip-Hop", "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300"),
-    ArtistItem("wiz", "Wiz Khalifa", "Hip-Hop / Chill Rap", "Hip-Hop", "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300"),
-    ArtistItem("post", "Post Malone", "Pop / Rap / Rock", "Pop", "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300"),
+    ArtistItem("2pac", "2Pac", "Hip-Hop / 90s Legend", "Hip-Hop", "https://cdn-images.dzcdn.net/images/artist/dc2743d871b5935004292eed2cd55f68/500x500-000000-80-0-0.jpg"),
+    ArtistItem("weeknd", "The Weeknd", "R&B / Synthpop", "Pop", "https://cdn-images.dzcdn.net/images/artist/581693b4724a7fcfa754455101e13a44/500x500-000000-80-0-0.jpg"),
+    ArtistItem("eminem", "Eminem", "Hip-Hop / Rap", "Hip-Hop", "https://cdn-images.dzcdn.net/images/artist/7fa738468c9a73ff98c1e1b78d622b81/500x500-000000-80-0-0.jpg"),
+    ArtistItem("travis", "Travis Scott", "Trap / Psychedelic Rap", "Hip-Hop", "https://cdn-images.dzcdn.net/images/artist/8d8316146026d7e6ce377e314536df62/500x500-000000-80-0-0.jpg"),
+    ArtistItem("drake", "Drake", "Hip-Hop / Melodic", "Hip-Hop", "https://cdn-images.dzcdn.net/images/artist/1051e7fd110f9d3e5e88cdc69c5f227b/500x500-000000-80-0-0.jpg"),
+    ArtistItem("kendrick", "Kendrick Lamar", "Conscious Rap", "Hip-Hop", "https://cdn-images.dzcdn.net/images/artist/be0a7c550567f4af0ed202d7235b74d6/500x500-000000-80-0-0.jpg"),
+    ArtistItem("wiz", "Wiz Khalifa", "Hip-Hop / Chill Rap", "Hip-Hop", "https://cdn-images.dzcdn.net/images/artist/a1dc970ad2ad6afa42580c692b8a8a8d/500x500-000000-80-0-0.jpg"),
+    ArtistItem("post", "Post Malone", "Pop / Rap / Rock", "Pop", "https://cdn-images.dzcdn.net/images/artist/a5a8cca44e7eab2db7d44e039bed2574/500x500-000000-80-0-0.jpg"),
 
     // Pop & Global
-    ArtistItem("charlie", "Charlie Puth", "Pop / Soul", "Pop", "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300"),
-    ArtistItem("rihanna", "Rihanna", "Pop / R&B", "Pop", "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300"),
-    ArtistItem("taylor", "Taylor Swift", "Pop / Country", "Pop", "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=300"),
-    ArtistItem("billie", "Billie Eilish", "Alt-Pop / Dark Pop", "Pop", "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300"),
-    ArtistItem("bruno", "Bruno Mars", "Funk / Pop / R&B", "Pop", "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300"),
-    ArtistItem("dualipa", "Dua Lipa", "Disco Pop / Dance", "Pop", "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300"),
+    ArtistItem("charlie", "Charlie Puth", "Pop / Soul", "Pop", "https://cdn-images.dzcdn.net/images/artist/c355b366638e0c5f20f4b265f0f12646/500x500-000000-80-0-0.jpg"),
+    ArtistItem("rihanna", "Rihanna", "Pop / R&B", "Pop", "https://cdn-images.dzcdn.net/images/artist/6fcfaac74179ff42d7aff076a5265d96/500x500-000000-80-0-0.jpg"),
+    ArtistItem("taylor", "Taylor Swift", "Pop / Country", "Pop", "https://cdn-images.dzcdn.net/images/artist/e528e270424103b527f8a27ac625563b/500x500-000000-80-0-0.jpg"),
+    ArtistItem("billie", "Billie Eilish", "Alt-Pop / Dark Pop", "Pop", "https://cdn-images.dzcdn.net/images/artist/8eab1a9a644889aabaca1e193e05f984/500x500-000000-80-0-0.jpg"),
+    ArtistItem("bruno", "Bruno Mars", "Funk / Pop / R&B", "Pop", "https://cdn-images.dzcdn.net/images/artist/90f0b5b11df4f87ee878f38569b5995b/500x500-000000-80-0-0.jpg"),
+    ArtistItem("dualipa", "Dua Lipa", "Disco Pop / Dance", "Pop", "https://cdn-images.dzcdn.net/images/artist/877872aaf75694f11d53c318700ab2b5/500x500-000000-80-0-0.jpg"),
 
     // Punjabi Hits
-    ArtistItem("ap", "AP Dhillon", "Punjabi / Indo-Western", "Punjabi", "https://c.saavncdn.com/890/Excuses-English-2021-20210930112054-500x500.jpg"),
-    ArtistItem("sidhu", "Sidhu Moose Wala", "Punjabi Rap / Gangsta", "Punjabi", "https://c.saavncdn.com/209/MoonChild-Era-Punjabi-2021-20240715073449-500x500.jpg"),
-    ArtistItem("diljit", "Diljit Dosanjh", "Punjabi / Pop", "Punjabi", "https://c.saavncdn.com/209/MoonChild-Era-Punjabi-2021-20240715073449-500x500.jpg"),
-    ArtistItem("aujla", "Karan Aujla", "Punjabi / Hip-Hop", "Punjabi", "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300"),
-    ArtistItem("shubh", "Shubh", "Punjabi / Lo-Fi Rap", "Punjabi", "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300"),
-    ArtistItem("divine", "DIVINE", "Gully Rap / Hip-Hop", "Hip-Hop", "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=300"),
+    ArtistItem("ap", "AP Dhillon", "Punjabi / Indo-Western", "Punjabi", "https://cdn-images.dzcdn.net/images/artist/52594ac9fa763dc163ed13d21cb130ec/500x500-000000-80-0-0.jpg"),
+    ArtistItem("sidhu", "Sidhu Moose Wala", "Punjabi Rap / Gangsta", "Punjabi", "https://cdn-images.dzcdn.net/images/artist/fb1def876c43cc16738bfd6ad3d1dcd9/500x500-000000-80-0-0.jpg"),
+    ArtistItem("diljit", "Diljit Dosanjh", "Punjabi / Pop", "Punjabi", "https://cdn-images.dzcdn.net/images/artist/79b85e695e0ca6529e56bf3b628e92bd/500x500-000000-80-0-0.jpg"),
+    ArtistItem("aujla", "Karan Aujla", "Punjabi / Hip-Hop", "Punjabi", "https://cdn-images.dzcdn.net/images/artist/a91a1d5ea91e85e4f0966569b50e8d6a/500x500-000000-80-0-0.jpg"),
+    ArtistItem("shubh", "Shubh", "Punjabi / Lo-Fi Rap", "Punjabi", "https://cdn-images.dzcdn.net/images/artist/66c1e15679704beb01c912eb6668de14/500x500-000000-80-0-0.jpg"),
+    ArtistItem("divine", "DIVINE", "Gully Rap / Hip-Hop", "Hip-Hop", "https://cdn-images.dzcdn.net/images/artist/343c93eb51eb5abb8c1e43fe371be1d1/500x500-000000-80-0-0.jpg"),
 
     // Bollywood & Romantic
-    ArtistItem("arijit", "Arijit Singh", "Romantic / Melodies", "Bollywood", "https://c.saavncdn.com/871/Brahmastra-Original-Motion-Picture-Soundtrack-Hindi-2022-20221006155213-500x500.jpg"),
-    ArtistItem("atif", "Atif Aslam", "Romantic / Rock", "Bollywood", "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300"),
-    ArtistItem("pritam", "Pritam", "Bollywood / Chartbusters", "Bollywood", "https://c.saavncdn.com/871/Brahmastra-Original-Motion-Picture-Soundtrack-Hindi-2022-20221006155213-500x500.jpg"),
-    ArtistItem("vishal", "Vishal Mishra", "Soulful / Bollywood", "Bollywood", "https://c.saavncdn.com/092/ANIMAL-Hindi-2023-20260724191152-500x500.jpg"),
-    ArtistItem("kk", "KK", "Nostalgic / Rock Melodies", "Bollywood", "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300"),
+    ArtistItem("arijit", "Arijit Singh", "Romantic / Melodies", "Bollywood", "https://cdn-images.dzcdn.net/images/artist/ac5350cff290edd5b69fa584b8b1bd4f/500x500-000000-80-0-0.jpg"),
+    ArtistItem("atif", "Atif Aslam", "Romantic / Rock", "Bollywood", "https://cdn-images.dzcdn.net/images/artist/0ea90444148fff9c11d77f06a344724e/500x500-000000-80-0-0.jpg"),
+    ArtistItem("pritam", "Pritam", "Bollywood / Chartbusters", "Bollywood", "https://cdn-images.dzcdn.net/images/artist/d4914ccd414067cd5e2c108867079a85/500x500-000000-80-0-0.jpg"),
+    ArtistItem("vishal", "Vishal Mishra", "Soulful / Bollywood", "Bollywood", "https://cdn-images.dzcdn.net/images/artist/6125247795ee1f0b64253a1e993e7b0e/500x500-000000-80-0-0.jpg"),
+    ArtistItem("kk", "KK", "Nostalgic / Rock Melodies", "Bollywood", "https://cdn-images.dzcdn.net/images/artist/c4d613b651e2172622383fef15bed657/500x500-000000-80-0-0.jpg"),
 
     // Rock & Electronic & Lo-Fi
-    ArtistItem("coldplay", "Coldplay", "Alt Rock / Pop", "Rock", "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300"),
-    ArtistItem("linkin", "Linkin Park", "Nu Metal / Rock", "Rock", "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300"),
-    ArtistItem("daft", "Daft Punk", "Electronic / French Touch", "EDM", "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=300"),
-    ArtistItem("lofi", "Lofi Beats", "Chillhop / Study Vibes", "Lo-Fi", "https://c.saavncdn.com/670/Faded-Instrumental-2022-20260324143104-500x500.jpg")
+    ArtistItem("coldplay", "Coldplay", "Alt Rock / Pop", "Rock", "https://cdn-images.dzcdn.net/images/artist/3087954bca22f306324912e5ac8375c3/500x500-000000-80-0-0.jpg"),
+    ArtistItem("linkin", "Linkin Park", "Nu Metal / Rock", "Rock", "https://cdn-images.dzcdn.net/images/artist/4886905210739af3438990897bad3a98/500x500-000000-80-0-0.jpg"),
+    ArtistItem("daft", "Daft Punk", "Electronic / French Touch", "EDM", "https://cdn-images.dzcdn.net/images/artist/638e69b9caaf9f9f3f8826febea7b543/500x500-000000-80-0-0.jpg"),
+    ArtistItem("lofi", "Lofi Beats", "Chillhop / Study Vibes", "Lo-Fi", "https://cdn-images.dzcdn.net/images/artist/e1fa61f839957d88511609832a416a03/500x500-000000-80-0-0.jpg")
 )
 
 @Composable

@@ -163,6 +163,39 @@ fun TrackActionSheet(
                     onStartJam()
                     onDismiss()
                 }
+
+                // Action: Download for Offline
+                val isDownloaded = remember(track.id) { com.alphabotz.vybemusic.core.storage.DownloadManager.isDownloaded(track.id) }
+                val isDownloading = remember(track.id) { com.alphabotz.vybemusic.core.storage.DownloadManager.isDownloading(track.id) }
+                ActionSheetRow(
+                    icon = if (isDownloaded) Icons.Filled.CheckCircle else Icons.Outlined.Download,
+                    iconTint = if (isDownloaded) VybeVolt else Color.White,
+                    title = if (isDownloaded) "Downloaded for Offline" else if (isDownloading) "Downloading..." else "Download Song",
+                    subtitle = if (isDownloaded) "Available offline without internet" else "Save high quality 320kbps audio to device",
+                    badge = if (isDownloaded) "SAVED" else null
+                ) {
+                    if (isDownloaded) {
+                        com.alphabotz.vybemusic.core.storage.DownloadManager.deleteDownloadedTrack(track.id)
+                    } else {
+                        com.alphabotz.vybemusic.core.storage.DownloadManager.downloadTrack(track)
+                    }
+                    onDismiss()
+                }
+
+                // Action: Share Song
+                ActionSheetRow(
+                    icon = Icons.Default.Share,
+                    title = "Share Song",
+                    subtitle = "Share Spotify-style track preview with friends"
+                ) {
+                    val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(android.content.Intent.EXTRA_SUBJECT, "Listening to ${track.title}")
+                        putExtra(android.content.Intent.EXTRA_TEXT, "🎵 Check out '${track.title}' by ${track.artist} on Vybe Music!\nStream in 320kbps Studio Master audio.")
+                    }
+                    context.startActivity(android.content.Intent.createChooser(shareIntent, "Share '${track.title}'"))
+                    onDismiss()
+                }
             } else if (showPlaylistPicker) {
                 // Playlist Selection Sub-view
                 Row(

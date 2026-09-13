@@ -27,7 +27,7 @@ import com.alphabotz.vybemusic.ui.components.VybeJamSheet
 import com.alphabotz.vybemusic.ui.components.VybeMiniPlayer
 import com.alphabotz.vybemusic.ui.theme.*
 
-enum class NavTab { HOME, EXPLORE, SEARCH, JAM }
+enum class NavTab { HOME, EXPLORE, SEARCH, LIBRARY, JAM }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,6 +71,12 @@ fun MainScaffold(
                     onTrackSelect = { track, queue -> playerController.playTrack(track, queue) },
                     onPlayNext = { playerController.playNextInQueue(it) },
                     onAddToQueue = { playerController.addToQueue(it) }
+                )
+                NavTab.LIBRARY -> LibraryScreen(
+                    onTrackSelect = { track, queue -> playerController.playTrack(track, queue) },
+                    onPlayNext = { playerController.playNextInQueue(it) },
+                    onAddToQueue = { playerController.addToQueue(it) },
+                    onOpenArtistPicker = { isArtistPickerOpen = true }
                 )
                 NavTab.JAM -> {
                     LaunchedEffect(Unit) {
@@ -130,6 +136,12 @@ fun MainScaffold(
                         icon = Icons.Default.Search,
                         isSelected = currentTab == NavTab.SEARCH,
                         onClick = { currentTab = NavTab.SEARCH }
+                    )
+
+                    DockItem(
+                        icon = Icons.Default.Folder,
+                        isSelected = currentTab == NavTab.LIBRARY,
+                        onClick = { currentTab = NavTab.LIBRARY }
                     )
 
                     DockItem(
